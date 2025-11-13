@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>JC Math</title>
+<link rel="icon" href="assets/icon.png" />
+<style>
+  :root{--blue:#0b6fd6;--light:#e9f4ff;--card:#ffffff;--muted:#6b7280}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,var(--light),#ffffff);color:#0b1020;-webkit-font-smoothing:antialiased}
+  .container{max-width:1100px;margin:40px auto;padding:24px}
+  header{display:flex;align-items:center;gap:16px}
+  header img{width:56px;height:56px;border-radius:12px}
+  header h1{font-size:22px;margin:0;color:var(--blue)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-top:24px}
+  .card{background:var(--card);border-radius:12px;box-shadow:0 6px 18px rgba(11,111,214,0.06);padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;min-height:160px}
+  .card h3{margin:0 0 8px 0;color:#08203a}
+  .card p{margin:0 0 12px 0;color:var(--muted)}
+  .card button{background:var(--blue);color:#fff;border:none;padding:10px 14px;border-radius:10px;font-weight:700;cursor:pointer}
+  footer{margin-top:28px;text-align:center;color:var(--muted);font-size:13px}
+  /* music controls bottom-left */
+  #musicControls{position:fixed;left:16px;bottom:16px;z-index:9999;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.9);padding:8px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,0.08)}
+  #musicControls img{width:36px;height:36px;cursor:pointer;border-radius:8px}
+  #musicTitle{font-size:13px;color:#0b1020;font-weight:600}
+  /* game overlay */
+  #gameOverlay{display:none;position:fixed;inset:0;background:rgba(255,255,255,1);z-index:9998;align-items:center;justify-content:center;padding:20px}
+  #gameFrame{width:100%;max-width:980px;height:80vh;background:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(2,6,23,0.12);position:relative;overflow:hidden;padding:0}
+  #gameFrame iframe, #gameFrame .game-inner{width:100%;height:100%;border:0;display:block}
+  #gameBack{position:absolute;left:12px;top:12px;z-index:10001;padding:8px 12px;border-radius:8px;border:none;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}
+  @media (max-width:560px){ #gameFrame{height:86vh} header h1{font-size:18px} }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <img src="assets/icon.png" alt="JC Math logo">
+      <h1>JC Math — Games</h1>
+    </header>
+
+    <section class="grid" id="gamesGrid">
+      <article class="card" id="card-tiny">
+        <div>
+          <h3>Tiny Fishing 🎣</h3>
+          <p>Catch fish, upgrade gear, have fun!</p>
+        </div>
+        <div style="width:100%;display:flex;gap:8px;justify-content:center">
+          <button data-game="tiny-fishing">Play</button>
+        </div>
+      </article>
+
+      <article class="card" id="card-slope">
+        <div>
+          <h3>Slope 🏔️</h3>
+          <p>Fast-paced rolling action. (Placeholder)</p>
+        </div>
+        <div style="width:100%;display:flex;gap:8px;justify-content:center">
+          <button data-game="slope">Play</button>
+        </div>
+      </article>
+
+      <article class="card" id="card-2048">
+        <div>
+          <h3>2048 🔢</h3>
+          <p>Tile-combining puzzle. (Placeholder)</p>
+        </div>
+        <div style="width:100%;display:flex;gap:8px;justify-content:center">
+          <button data-game="2048">Play</button>
+        </div>
+      </article>
+    </section>
+
+    <footer>
+      Built for JC Math — Upload to GitHub Pages in the repo named <strong>JCMath</strong>.
+    </footer>
+  </div>
+
+  <!-- game overlay -->
+  <div id="gameOverlay" role="dialog" aria-hidden="true">
+    <div id="gameFrame">
+      <button id="gameBack">⬅ Back to Menu</button>
+      <div class="game-inner" id="gameInner"></div>
+    </div>
+  </div>
+
+  <!-- music controls -->
+  <div id="musicControls">
+    <img id="musicToggle" src="assets/pause.png" alt="pause">
+    <div id="musicTitle">JC Math Music</div>
+    <audio id="bgMusic" loop>
+      <source src="assets/background.mp3" type="audio/mpeg">
+    </audio>
+  </div>
+
+<script>
+// init music
+const bg = document.getElementById('bgMusic');
+const toggle = document.getElementById('musicToggle');
+let playing = false;
+
+function updateToggle(){
+  toggle.src = playing ? 'assets/pause.png' : 'assets/play.png';
+}
+
+toggle.addEventListener('click', ()=>{
+  if(playing){ bg.pause(); playing=false; updateToggle(); }
+  else { bg.play().then(()=>{ playing=true; updateToggle(); }).catch(()=>{ playing=false; updateToggle(); }); }
+});
+
+// attempt autoplay on load
+window.addEventListener('load', ()=>{
+  bg.play().then(()=>{ playing=true; updateToggle(); }).catch(()=>{ /* autoplay blocked — still show controls */ });
+});
+
+// game handling
+const overlay = document.getElementById('gameOverlay');
+const gameInner = document.getElementById('gameInner');
+const gameBack = document.getElementById('gameBack');
+
+function openGame(slug){
+  overlay.style.display = 'flex';
+  overlay.setAttribute('aria-hidden','false');
+  gameInner.innerHTML = ''; // clear
+  if(slug === 'tiny-fishing'){
+    // try to load extracted tiny-fishing files (index.html if present) via iframe
+    const iframe = document.createElement('iframe');
+    // prefer games/tiny-fishing/index.html
+    iframe.src = 'games/tiny-fishing/index.html';
+    iframe.setAttribute('allow','autoplay; fullscreen');
+    iframe.style.border = '0';
+    gameInner.appendChild(iframe);
+  } else if(slug === 'slope'){
+    gameInner.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%"><div style="text-align:center"><h2>Slope — Placeholder</h2><p>Replace with game ZIP later.</p></div></div>';
+  } else if(slug === '2048'){
+    gameInner.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%"><div style="text-align:center"><h2>2048 — Placeholder</h2><p>Replace with game ZIP later.</p></div></div>';
+  }
+}
+
+document.querySelectorAll('button[data-game]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const slug = b.getAttribute('data-game');
+    openGame(slug);
+  });
+});
+
+gameBack.addEventListener('click', ()=>{
+  // attempt to stop music in iframe by removing iframe
+  gameInner.innerHTML = '';
+  overlay.style.display = 'none';
+  overlay.setAttribute('aria-hidden','true');
+});
+
+</script>
+
+</body>
+</html>
